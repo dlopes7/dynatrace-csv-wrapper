@@ -72,13 +72,27 @@ def metrics_series(selector):
 
     date_from = request.args.get("from", None)
     date_to = request.args.get("to", None)
+    next_page_key = request.args.get("nextPageKey", None)
+    page_size = request.args.get("pageSize", None)
+    resolution = request.args.get("resolution", None)
+    scope = request.args.get("scope", None)
+
     custom_time = request.args.get("customTime", None)
     timezone = request.args.get("timezone", None)
     if custom_time is not None:
         date_from, date_to = build_custom_time(custom_time, timezone)
 
     lines = json_to_csv(
-        d.metrics_series(selector, date_from=date_from, date_to=date_to), timezone
+        d.metrics_series(
+            selector,
+            date_from=date_from,
+            date_to=date_to,
+            next_page_key=next_page_key,
+            page_size=page_size,
+            resolution=resolution,
+            scope=scope,
+        ),
+        timezone,
     )
     return csv_download(lines)
 

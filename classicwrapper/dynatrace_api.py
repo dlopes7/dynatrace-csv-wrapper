@@ -27,9 +27,25 @@ class DynatraceAPI:
         path = "/api/v2/metrics/descriptors"
         return self._make_request(path)
 
-    def metrics_series(self, selector, resolution=None, date_from=None, date_to=None):
+    def metrics_series(
+        self,
+        selector,
+        resolution=None,
+        date_from=None,
+        date_to=None,
+        next_page_key=None,
+        page_size=None,
+        scope=None,
+    ):
         path = f"/api/v2/metrics/series/{selector}"
-        params = {"resolution": resolution, "from": date_from, "to": date_to}
+        params = {
+            "resolution": resolution,
+            "from": date_from,
+            "to": date_to,
+            "nextPageKey": next_page_key,
+            "pageSize": page_size,
+            "scope": scope,
+        }
         return self._make_request(path, params=params)
 
     def synthetic_monitors(self):
