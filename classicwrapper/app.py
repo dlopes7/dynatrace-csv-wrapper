@@ -32,7 +32,7 @@ def csv_download(lines):
     cw = csv.writer(si)
     cw.writerows(lines)
     output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+    output.headers["Content-Disposition"] = "attachment; filename=results.csv"
     output.headers["Content-type"] = "text/csv"
     return output
 
