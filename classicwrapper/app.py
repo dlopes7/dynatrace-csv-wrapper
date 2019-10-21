@@ -46,9 +46,9 @@ def build_custom_time(custom_time, timezone=None):
         "yesterday": (
             millis(
                 now.replace(hour=0, minute=0, second=0, microsecond=0)
-                - datetime.timedelta(days=1)
+                - datetime.timedelta(days=1, seconds=1)
             ),
-            millis(now.replace(hour=0, minute=0, second=0, microsecond=0)),
+            millis(now.replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)),
         )
     }
     return time_filters[custom_time]
