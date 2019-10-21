@@ -21,6 +21,8 @@ class DynatraceAPI:
         self.logger.debug(f"Calling {url} with params: {params}")
         r = requests.request(method, url, params=params, headers=self._auth)
         self.logger.debug(f"Got response: {r} from {url}")
+        if r.status_code >= 300:
+            self.logger.error(f"Error making request: {r.text}")
         return r.json()
 
     def metrics_descriptors(self):

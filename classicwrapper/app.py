@@ -57,7 +57,7 @@ def build_custom_time(custom_time, timezone=None):
             ),
             millis(
                 now.replace(hour=0, minute=0, second=0, microsecond=0)
-                - datetime.timedelta(seconds=1)
+                - datetime.timedelta(minutes=2, seconds=1)
             ),
         )
     }
@@ -82,18 +82,20 @@ def metrics_series(selector):
     if custom_time is not None:
         date_from, date_to = build_custom_time(custom_time, timezone)
 
-    lines = json_to_csv(
-        d.metrics_series(
-            selector,
-            date_from=date_from,
-            date_to=date_to,
-            next_page_key=next_page_key,
-            page_size=page_size,
-            resolution=resolution,
-            scope=scope,
-        ),
-        timezone,
+    data = d.metrics_series(
+        selector,
+        date_from=date_from,
+        date_to=date_to,
+        next_page_key=next_page_key,
+        page_size=page_size,
+        resolution=resolution,
+        scope=scope,
     )
+
+    if "error" in data:
+        return make_response(data, data["error"]["code"])
+
+    lines = json_to_csv(data, timezone)
     return csv_download(lines)
 
 
