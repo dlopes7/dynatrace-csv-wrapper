@@ -14,16 +14,23 @@ from utils import millis
 app = Flask(__name__)
 
 
-def json_to_csv(json_obj: Dict):
+def json_to_csv(json_obj: Dict, timezone=None):
     data = []
+    if timezone is not None:
+        timezone = pytz.timezone(timezone)
     if "metrics" in json_obj:
         for selector, details in json_obj["metrics"].items():
             for serie in details["series"]:
                 for value in serie["values"]:
                     ts = value["timestamp"]
                     val = value["value"]
+                    date = datetime.datetime.fromtimestamp(
+                        ts / 1000, timezone
+                    ).strftime("%d/%m/%Y %H:%M:%S%z")
                     if val is not None:
-                        data.append([selector, "|".join(serie["dimensions"]), ts, val])
+                        data.append(
+                            [selector, "|".join(serie["dimensions"]), ts, date, val]
+                        )
     return data
 
 
@@ -48,7 +55,10 @@ def build_custom_time(custom_time, timezone=None):
                 now.replace(hour=0, minute=0, second=0, microsecond=0)
                 - datetime.timedelta(days=1, seconds=1)
             ),
-            millis(now.replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(seconds=1)),
+            millis(
+                now.replace(hour=0, minute=0, second=0, microsecond=0)
+                - datetime.timedelta(seconds=1)
+            ),
         )
     }
     return time_filters[custom_time]
@@ -56,9 +66,7 @@ def build_custom_time(custom_time, timezone=None):
 
 @app.route("/api/v2/metrics/series/<selector>")
 def metrics_series(selector):
-    with open(
-        "config_customer.json", "r"
-    ) as f:  # TODO - This file needs to be config.json
+    with open("config.json", "r") as f:
         config = json.load(f)
     d = DynatraceAPI(config["dynatrace_base_url"], config["dynatrace_token"])
 
@@ -70,7 +78,7 @@ def metrics_series(selector):
         date_from, date_to = build_custom_time(custom_time, timezone)
 
     lines = json_to_csv(
-        d.metrics_series(selector, date_from=date_from, date_to=date_to)
+        d.metrics_series(selector, date_from=date_from, date_to=date_to), timezone
     )
     return csv_download(lines)
 
