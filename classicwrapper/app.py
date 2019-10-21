@@ -5,6 +5,8 @@ import json
 import pytz
 from typing import Dict
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 from flask import Flask, make_response, request
 
@@ -14,6 +16,24 @@ from utils import millis
 
 app = Flask(__name__)
 current_file_path = os.path.dirname(os.path.realpath(__file__))
+logger = logging.getLogger(__name__)
+
+
+def log_setup():
+    log_handler = RotatingFileHandler(
+        os.path.join(current_file_path, "log/app.log"),
+        maxBytes=5 * 1024 * 1024,
+        backupCount=10,
+    )
+    fmt = logging.Formatter("%(asctime)s - %(levelname)s - %(funcName)s - %(message)s ")
+    log_handler.setFormatter(fmt)
+    logger.addHandler(log_handler)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(fmt)
+    logger.addHandler(stream_handler)
+
+    logger.setLevel(logging.DEBUG)
 
 
 def json_to_csv(json_obj: Dict, timezone=None):
@@ -70,7 +90,9 @@ def build_custom_time(custom_time, timezone=None):
 def metrics_series(selector):
     with open(f"{current_file_path}/config.json", "r") as f:
         config = json.load(f)
-    d = DynatraceAPI(config["dynatrace_base_url"], config["dynatrace_token"])
+    d = DynatraceAPI(
+        config["dynatrace_base_url"], config["dynatrace_token"], logger=logger
+    )
 
     date_from = request.args.get("from", None)
     date_to = request.args.get("to", None)
@@ -102,6 +124,7 @@ def metrics_series(selector):
 
 
 def main():
+    log_setup()
     app.run(debug=True, host="0.0.0.0")
 
 

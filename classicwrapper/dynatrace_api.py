@@ -4,10 +4,6 @@ import logging
 import requests
 
 default_logger = logging.getLogger(__name__)
-h = logging.StreamHandler()
-h.setLevel(logging.DEBUG)
-default_logger.addHandler(h)
-default_logger.setLevel(logging.DEBUG)
 
 
 class DynatraceAPI:
