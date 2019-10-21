@@ -4,6 +4,7 @@ import datetime
 import json
 import pytz
 from typing import Dict
+import os
 
 from flask import Flask, make_response, request
 
@@ -12,6 +13,7 @@ from utils import millis
 
 
 app = Flask(__name__)
+current_file_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def json_to_csv(json_obj: Dict, timezone=None):
@@ -66,7 +68,7 @@ def build_custom_time(custom_time, timezone=None):
 
 @app.route("/api/v2/metrics/series/<selector>")
 def metrics_series(selector):
-    with open("config.json", "r") as f:
+    with open(f"{current_file_path}/config.json", "r") as f:
         config = json.load(f)
     d = DynatraceAPI(config["dynatrace_base_url"], config["dynatrace_token"])
 
@@ -100,7 +102,7 @@ def metrics_series(selector):
 
 
 def main():
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
 
 
 if __name__ == "__main__":
