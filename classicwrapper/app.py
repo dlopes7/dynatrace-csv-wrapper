@@ -16,7 +16,12 @@ from utils import millis
 
 app = Flask(__name__)
 current_file_path = os.path.dirname(os.path.realpath(__file__))
-logger = logging.getLogger(__name__)
+
+
+@app.errorhandler(500)
+def internal_error(exception):
+    app.logger.exception(exception)
+    return make_response({"error": {"message": str(exception)}}, 500)
 
 
 def log_setup():
@@ -27,13 +32,13 @@ def log_setup():
     )
     fmt = logging.Formatter("%(asctime)s - %(levelname)s - %(funcName)s - %(message)s ")
     log_handler.setFormatter(fmt)
-    logger.addHandler(log_handler)
+    app.logger.addHandler(log_handler)
 
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(fmt)
-    logger.addHandler(stream_handler)
+    app.logger.addHandler(stream_handler)
 
-    logger.setLevel(logging.DEBUG)
+    app.logger.setLevel(logging.DEBUG)
 
 
 def json_to_csv(json_obj: Dict, timezone=None):
@@ -91,7 +96,7 @@ def metrics_series(selector):
     with open(f"{current_file_path}/config.json", "r") as f:
         config = json.load(f)
     d = DynatraceAPI(
-        config["dynatrace_base_url"], config["dynatrace_token"], logger=logger
+        config["dynatrace_base_url"], config["dynatrace_token"], logger=app.logger
     )
 
     date_from = request.args.get("from", None)
@@ -125,7 +130,7 @@ def metrics_series(selector):
 
 def main():
     log_setup()
-    app.run(debug=True, host="0.0.0.0")
+    app.run(host="0.0.0.0")
 
 
 if __name__ == "__main__":
