@@ -37,7 +37,6 @@ def log_setup():
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(fmt)
     app.logger.addHandler(stream_handler)
-
     app.logger.setLevel(logging.DEBUG)
 
 
@@ -51,24 +50,16 @@ def json_to_csv(json_obj: Dict, timezone=None):
                 for value in serie["values"]:
                     ts = value["timestamp"]
                     val = value["value"]
-                    date = datetime.datetime.fromtimestamp(
-                        ts / 1000, timezone
-                    ).strftime("%d/%m/%Y %H:%M:%S%z")
                     if val is not None:
-                        data.append(
-                            [selector, "|".join(serie["dimensions"]), ts, date, val]
-                        )
+                        data.append(["Availability", serie["dimensions"][0], ts, val])
     elif "dataResult" in json_obj:
-        timeseries_id = json_obj["timeseriesId"]
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
             for datapoint in datapoints:
                 ts = datapoint[0]
                 val = datapoint[1]
-                date = datetime.datetime.fromtimestamp(ts / 1000, timezone).strftime(
-                    "%d/%m/%Y %H:%M:%S%z"
-                )
                 if val is not None:
-                    data.append([timeseries_id, dimension, ts, date, val])
+                    val = 0 if val == 100 else 1
+                    data.append(["Availability", dimension.split(",")[0], ts, val])
 
     return data
 
@@ -151,7 +142,7 @@ def timeseries(identifier):
     date_from = request.args.get("startTimestamp", None)
     date_to = request.args.get("endTimestamp", None)
     predict = request.args.get("predict", False)
-    aggregation = request.args.get("aggregation", "AVG")
+    aggregation = request.args.get("aggregation", None)
     query_mode = request.args.get("queryMode", "SERIES")
     entity = request.args.get("entity", None)
     tag = request.args.get("tag", None)

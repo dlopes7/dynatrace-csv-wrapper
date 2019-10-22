@@ -58,7 +58,7 @@ class DynatraceAPI:
         self,
         identifier,
         include_data: bool = False,
-        aggregation="AVG",
+        aggregation=None,
         start_timestamp=None,
         end_timestamp=None,
         predict=False,
