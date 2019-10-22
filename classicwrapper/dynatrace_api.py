@@ -54,6 +54,39 @@ class DynatraceAPI:
         path = f"/api/v1/synthetic/monitors/{monitor_id}"
         return self._make_request(path)
 
+    def timeseries(
+        self,
+        identifier,
+        include_data: bool = False,
+        aggregation="AVG",
+        start_timestamp=None,
+        end_timestamp=None,
+        predict=False,
+        relative_time=None,
+        query_mode="SERIES",
+        entity=None,
+        tag=None,
+        percentile=None,
+        include_parents_ids=False,
+        consider_maintenance=False,
+    ):
+        path = f"/api/v1/timeseries/{identifier}"
+        params = {
+            "includeData": include_data,
+            "aggregationType": aggregation,
+            "startTimestamp": start_timestamp,
+            "endTimestamp": end_timestamp,
+            "predict": predict,
+            "relativeTime": relative_time,
+            "queryMode": query_mode,
+            "entity": entity,
+            "tag": tag,
+            "percentile": percentile,
+            "includeParentIds": include_parents_ids,
+            "considerMaintenanceWindowsForAvailability": consider_maintenance,
+        }
+        return self._make_request(path, params)
+
 
 def main():
 

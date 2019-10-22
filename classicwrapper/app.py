@@ -58,6 +58,18 @@ def json_to_csv(json_obj: Dict, timezone=None):
                         data.append(
                             [selector, "|".join(serie["dimensions"]), ts, date, val]
                         )
+    elif "dataResult" in json_obj:
+        timeseries_id = json_obj["timeseriesId"]
+        for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
+            for datapoint in datapoints:
+                ts = datapoint[0]
+                val = datapoint[1]
+                date = datetime.datetime.fromtimestamp(ts / 1000, timezone).strftime(
+                    "%d/%m/%Y %H:%M:%S%z"
+                )
+                if val is not None:
+                    data.append([timeseries_id, dimension, ts, date, val])
+
     return data
 
 
@@ -128,9 +140,57 @@ def metrics_series(selector):
     return csv_download(lines)
 
 
+@app.route("/api/v1/timeseries/<identifier>")
+def timeseries(identifier):
+    with open(f"{current_file_path}/config.json", "r") as f:
+        config = json.load(f)
+    d = DynatraceAPI(
+        config["dynatrace_base_url"], config["dynatrace_token"], logger=app.logger
+    )
+
+    date_from = request.args.get("startTimestamp", None)
+    date_to = request.args.get("endTimestamp", None)
+    predict = request.args.get("predict", False)
+    aggregation = request.args.get("aggregation", "AVG")
+    query_mode = request.args.get("queryMode", "SERIES")
+    entity = request.args.get("entity", None)
+    tag = request.args.get("tag", None)
+    percentile = request.args.get("percentile", None)
+    include_parents_ids = request.args.get("includeParentIds", False)
+    consider_maintenance = request.args.get(
+        "considerMaintenanceWindowsForAvailability", False
+    )
+
+    custom_time = request.args.get("customTime", None)
+    timezone = request.args.get("timezone", None)
+    if custom_time is not None:
+        date_from, date_to = build_custom_time(custom_time, timezone)
+
+    data = d.timeseries(
+        identifier,
+        include_data=True,
+        aggregation=aggregation,
+        start_timestamp=date_from,
+        end_timestamp=date_to,
+        predict=predict,
+        query_mode=query_mode,
+        entity=entity,
+        tag=tag,
+        percentile=percentile,
+        include_parents_ids=include_parents_ids,
+        consider_maintenance=consider_maintenance,
+    )
+
+    if "error" in data:
+        return make_response(data, data["error"]["code"])
+
+    lines = json_to_csv(data, timezone)
+    return csv_download(lines)
+
+
 def main():
     log_setup()
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", debug=True)
 
 
 if __name__ == "__main__":
