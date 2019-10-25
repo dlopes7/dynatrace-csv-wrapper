@@ -42,8 +42,6 @@ def log_setup():
 
 def json_to_csv(json_obj: Dict, timezone=None):
     data = []
-    if timezone is not None:
-        timezone = pytz.timezone(timezone)
     if "metrics" in json_obj:
         for selector, details in json_obj["metrics"].items():
             for serie in details["series"]:
@@ -51,15 +49,16 @@ def json_to_csv(json_obj: Dict, timezone=None):
                     ts = value["timestamp"]
                     val = value["value"]
                     if val is not None:
-                        data.append(["Availability", serie["dimensions"][0], ts, val])
+                        data.append([selector, serie["dimensions"][0][:16], ts, val])
     elif "dataResult" in json_obj:
+        timeseries_id = json_obj["timeseriesId"]
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
             for datapoint in datapoints:
                 ts = datapoint[0]
                 val = datapoint[1]
                 if val is not None:
                     val = 0 if val == 100 else 1
-                    data.append(["Availability", dimension.split(",")[0], ts, val])
+                    data.append([timeseries_id, dimension.split(",")[0][:16], ts, val])
 
     return data
 
@@ -69,8 +68,8 @@ def csv_download(lines):
     cw = csv.writer(si)
     cw.writerows(lines)
     output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = "attachment; filename=results.csv"
-    output.headers["Content-type"] = "text/csv"
+    # output.headers["Content-Disposition"] = "attachment; filename=results.csv"
+    # output.headers["Content-type"] = "text/csv"
     return output
 
 
@@ -105,7 +104,7 @@ def metrics_series(selector):
     date_from = request.args.get("from", None)
     date_to = request.args.get("to", None)
     next_page_key = request.args.get("nextPageKey", None)
-    page_size = request.args.get("pageSize", None)
+    page_size = request.args.get("pageSize", 100000)
     resolution = request.args.get("resolution", None)
     scope = request.args.get("scope", None)
 
