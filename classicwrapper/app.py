@@ -49,7 +49,7 @@ def json_to_csv(json_obj: Dict, timezone=None):
                     ts = value["timestamp"]
                     val = value["value"]
                     if val is not None:
-                        data.append([selector, serie["dimensions"][0][:16], ts, val])
+                        data.append([selector, serie["dimensions"][0][-16:], ts, val])
     elif "dataResult" in json_obj:
         timeseries_id = json_obj["timeseriesId"]
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
@@ -58,7 +58,7 @@ def json_to_csv(json_obj: Dict, timezone=None):
                 val = datapoint[1]
                 if val is not None:
                     val = 0 if val == 100 else 1
-                    data.append([timeseries_id, dimension.split(",")[0][:16], ts, val])
+                    data.append([timeseries_id, dimension.split(",")[0][-16:], ts, val])
 
     return data
 
