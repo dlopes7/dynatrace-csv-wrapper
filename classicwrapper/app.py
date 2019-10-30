@@ -126,8 +126,9 @@ def metrics_series(selector):
     if "error" in data:
         return make_response(data, data["error"]["code"])
 
-    lines = json_to_csv(data, timezone)
-    return csv_download(lines)
+    # lines = json_to_csv(data, timezone)
+    # return csv_download(lines)
+    return make_response(data)
 
 
 @app.route("/api/v1/timeseries/<identifier>")
@@ -174,8 +175,9 @@ def timeseries(identifier):
     if "error" in data:
         return make_response(data, data["error"]["code"])
 
-    lines = json_to_csv(data, timezone)
-    return csv_download(lines)
+    # lines = json_to_csv(data, timezone)
+    # return csv_download(lines)
+    return make_response(data)
 
 
 def main():
