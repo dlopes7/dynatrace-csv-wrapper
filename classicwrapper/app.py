@@ -63,6 +63,22 @@ def json_to_csv(json_obj: Dict, timezone=None):
     return data
 
 
+def v1_to_v2(json_obj: Dict):
+    response_template = {"metrics": {}, "nextPageKey": None, "totalCount": 0}
+
+    if "dataResult" in json_obj:
+        timeseries_id = json_obj["timeseriesId"]
+        response_template["metrics"][timeseries_id] = {"series": []}
+        for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
+            serie = {"dimensions": dimension.split(",")[-1].strip(), "values": []}
+            for datapoint in datapoints:
+                serie["values"].append(
+                    {"timestamp": datapoint[0], "value": datapoint[1]}
+                )
+            response_template["metrics"][timeseries_id]["series"].append(serie)
+    return response_template
+
+
 def csv_download(lines):
     si = StringIO()
     cw = csv.writer(si)
@@ -177,7 +193,7 @@ def timeseries(identifier):
 
     # lines = json_to_csv(data, timezone)
     # return csv_download(lines)
-    return make_response(data)
+    return make_response(v1_to_v2(data))
 
 
 def main():
