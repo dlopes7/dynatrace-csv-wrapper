@@ -70,7 +70,7 @@ def v1_to_v2(json_obj: Dict):
         timeseries_id = json_obj["timeseriesId"]
         response_template["metrics"][timeseries_id] = {"series": []}
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
-            serie = {"dimensions": dimension.split(",")[-1].strip(), "values": []}
+            serie = {"dimensions": [dimension.split(",")[-1].strip()], "values": []}
             for datapoint in datapoints:
                 serie["values"].append(
                     {"timestamp": datapoint[0], "value": datapoint[1]}
