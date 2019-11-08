@@ -41,7 +41,7 @@ def log_setup():
     app.logger.setLevel(logging.DEBUG)
 
 
-def json_to_csv(json_obj: Dict, timezone=None):
+def json_to_csv(json_obj: Dict):
     data = []
     if "metrics" in json_obj:
         for selector, details in json_obj["metrics"].items():
@@ -91,11 +91,8 @@ def csv_download(lines):
     return output
 
 
-def build_custom_time(custom_time, timezone=None):
-    if timezone is not None:
-        timezone = pytz.timezone(timezone)
-
-    now = datetime.datetime.now(timezone)
+def build_custom_time(custom_time):
+    now = datetime.datetime.utcnow()
     time_filters = {
         "yesterday": (
             millis(
@@ -127,9 +124,8 @@ def metrics_series(selector):
     scope = request.args.get("scope", None)
 
     custom_time = request.args.get("customTime", None)
-    timezone = request.args.get("timezone", None)
     if custom_time is not None:
-        date_from, date_to = build_custom_time(custom_time, timezone)
+        date_from, date_to = build_custom_time(custom_time)
 
     data = d.metrics_series(
         selector,
@@ -144,7 +140,7 @@ def metrics_series(selector):
     if "error" in data:
         return make_response(data, data["error"]["code"])
 
-    # lines = json_to_csv(data, timezone)
+    # lines = json_to_csv(data)
     # return csv_download(lines)
     return make_response(data)
 
@@ -171,9 +167,8 @@ def timeseries(identifier):
     )
 
     custom_time = request.args.get("customTime", None)
-    timezone = request.args.get("timezone", None)
     if custom_time is not None:
-        date_from, date_to = build_custom_time(custom_time, timezone)
+        date_from, date_to = build_custom_time(custom_time)
 
     data = d.timeseries(
         identifier,
@@ -193,7 +188,7 @@ def timeseries(identifier):
     if "error" in data:
         return make_response(data, data["error"]["code"])
 
-    # lines = json_to_csv(data, timezone)
+    # lines = json_to_csv(data)
     # return csv_download(lines)
     return make_response(v1_to_v2(data))
 
