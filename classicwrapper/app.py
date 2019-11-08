@@ -1,3 +1,4 @@
+import autodynatrace
 from io import StringIO
 import csv
 import datetime
@@ -63,6 +64,7 @@ def json_to_csv(json_obj: Dict, timezone=None):
     return data
 
 
+@autodynatrace.dynatrace_custom_tracer
 def v1_to_v2(json_obj: Dict):
     response_template = {"metrics": {}, "nextPageKey": None, "totalCount": 0}
 
