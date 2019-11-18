@@ -1,4 +1,3 @@
-import autodynatrace
 from io import StringIO
 import csv
 import datetime
@@ -25,11 +24,7 @@ def internal_error(exception):
 
 
 def log_setup():
-    log_handler = RotatingFileHandler(
-        os.path.join(current_file_path, "log/app.log"),
-        maxBytes=5 * 1024 * 1024,
-        backupCount=10,
-    )
+    log_handler = RotatingFileHandler(os.path.join(current_file_path, "log/app.log"), maxBytes=5 * 1024 * 1024, backupCount=10,)
     fmt = logging.Formatter("%(asctime)s - %(levelname)s - %(funcName)s - %(message)s ")
     log_handler.setFormatter(fmt)
     app.logger.addHandler(log_handler)
@@ -63,7 +58,6 @@ def json_to_csv(json_obj: Dict):
     return data
 
 
-@autodynatrace.dynatrace_custom_tracer
 def v1_to_v2(json_obj: Dict):
     response_template = {"metrics": {}, "nextPageKey": None, "totalCount": 0}
 
@@ -73,9 +67,7 @@ def v1_to_v2(json_obj: Dict):
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
             serie = {"dimensions": [dimension.split(",")[-1].strip()], "values": []}
             for datapoint in datapoints:
-                serie["values"].append(
-                    {"timestamp": datapoint[0], "value": datapoint[1]}
-                )
+                serie["values"].append({"timestamp": datapoint[0], "value": datapoint[1]})
             response_template["metrics"][timeseries_id]["series"].append(serie)
     return response_template
 
@@ -94,14 +86,8 @@ def build_custom_time(custom_time):
     now = datetime.datetime.utcnow()
     time_filters = {
         "yesterday": (
-            millis(
-                now.replace(hour=0, minute=0, second=0, microsecond=0)
-                - datetime.timedelta(days=1, seconds=1)
-            ),
-            millis(
-                now.replace(hour=0, minute=0, second=0, microsecond=0)
-                - datetime.timedelta(minutes=2, seconds=1)
-            ),
+            millis(now.replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(days=1, seconds=1)),
+            millis(now.replace(hour=0, minute=0, second=0, microsecond=0) - datetime.timedelta(minutes=2, seconds=1)),
         )
     }
     return time_filters[custom_time]
@@ -111,9 +97,7 @@ def build_custom_time(custom_time):
 def metrics_series(selector):
     with open(f"{current_file_path}/config.json", "r") as f:
         config = json.load(f)
-    d = DynatraceAPI(
-        config["dynatrace_base_url"], config["dynatrace_token"], logger=app.logger
-    )
+    d = DynatraceAPI(config["dynatrace_base_url"], config["dynatrace_token"], logger=app.logger)
 
     date_from = request.args.get("from", None)
     date_to = request.args.get("to", None)
@@ -148,9 +132,7 @@ def metrics_series(selector):
 def timeseries(identifier):
     with open(f"{current_file_path}/config.json", "r") as f:
         config = json.load(f)
-    d = DynatraceAPI(
-        config["dynatrace_base_url"], config["dynatrace_token"], logger=app.logger
-    )
+    d = DynatraceAPI(config["dynatrace_base_url"], config["dynatrace_token"], logger=app.logger)
 
     date_from = request.args.get("startTimestamp", None)
     date_to = request.args.get("endTimestamp", None)
@@ -161,9 +143,7 @@ def timeseries(identifier):
     tag = request.args.get("tag", None)
     percentile = request.args.get("percentile", None)
     include_parents_ids = request.args.get("includeParentIds", False)
-    consider_maintenance = request.args.get(
-        "considerMaintenanceWindowsForAvailability", False
-    )
+    consider_maintenance = request.args.get("considerMaintenanceWindowsForAvailability", False)
 
     custom_time = request.args.get("customTime", None)
     if custom_time is not None:
