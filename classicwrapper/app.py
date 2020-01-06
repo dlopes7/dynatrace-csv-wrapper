@@ -182,7 +182,7 @@ def timeseries(identifier):
 
 def main():
     log_setup()
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", port=80, debug=True)
 
 
 if __name__ == "__main__":
