@@ -6,6 +6,7 @@ from typing import Dict
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+from collections import OrderedDict
 
 from flask import Flask, make_response, request
 
@@ -59,15 +60,17 @@ def json_to_csv(json_obj: Dict):
 
 
 def v1_to_v2(json_obj: Dict):
-    response_template = {"metrics": {}, "nextPageKey": None, "totalCount": 0}
+    response_template = OrderedDict({"totalCount": 0, "nextPageKey": None, "metrics": {}})
 
     if "dataResult" in json_obj:
         timeseries_id = json_obj["timeseriesId"]
         response_template["metrics"][timeseries_id] = {"series": []}
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
             serie = {"dimensions": [dimension.split(",")[-1].strip()], "values": []}
+            response_template["totalCount"] = len(datapoints)
             for datapoint in datapoints:
-                serie["values"].append({"timestamp": datapoint[0], "value": datapoint[1]})
+                val = datapoint[1] / 100 if datapoint[1] is not None else None
+                serie["values"].append({"timestamp": datapoint[0], "value": val})
             response_template["metrics"][timeseries_id]["series"].append(serie)
     return response_template
 
@@ -169,7 +172,7 @@ def timeseries(identifier):
 
     # lines = json_to_csv(data)
     # return csv_download(lines)
-    return make_response(v1_to_v2(data))
+    return json.dumps(v1_to_v2(data), indent=2)
 
 
 def main():

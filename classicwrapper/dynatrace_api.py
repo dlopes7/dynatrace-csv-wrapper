@@ -26,14 +26,7 @@ class DynatraceAPI:
         return self._make_request(path)
 
     def metrics_series(
-        self,
-        selector,
-        resolution=None,
-        date_from=None,
-        date_to=None,
-        next_page_key=None,
-        page_size=None,
-        scope=None,
+        self, selector, resolution=None, date_from=None, date_to=None, next_page_key=None, page_size=None, scope=None,
     ):
         path = f"/api/v2/metrics/series/{selector}"
         params = {
@@ -90,7 +83,7 @@ class DynatraceAPI:
 
 def main():
 
-    with open("config_customer.json", "r") as f:
+    with open("config.json", "r") as f:
         config = json.load(f)
     d = DynatraceAPI(config["dynatrace_base_url"], config["dynatrace_token"])
 
@@ -98,9 +91,9 @@ def main():
 
     # print(pformat(d.synthetic_monitor("HTTP_CHECK-4A8FA7A3BD1C6C64"), indent=2))
 
-    for metric, details in d.metrics_series(
-        "builtin:synthetic.browser.event.failure:names", date_from="now-5m"
-    )["metrics"].items():
+    for metric, details in d.metrics_series("builtin:synthetic.browser.event.failure:names", date_from="now-5m")[
+        "metrics"
+    ].items():
         for serie in details["series"]:
             print(serie)
 
