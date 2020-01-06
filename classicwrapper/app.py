@@ -126,9 +126,14 @@ def metrics_series(selector):
     if "error" in data:
         return make_response(data, data["error"]["code"])
 
+    data_response = OrderedDict({"totalCount": 0, "nextPageKey": None, "metrics": {}})
+    data_response["totalCount"] = data["totalCount"]
+    data_response["nextPageKey"] = data["nextPageKey"]
+    data_response["metrics"] = data["metrics"]
+
     # lines = json_to_csv(data)
     # return csv_download(lines)
-    return make_response(data)
+    return json.dumps(data_response, indent=2)
 
 
 @app.route("/api/v1/timeseries/<identifier>")
