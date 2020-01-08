@@ -71,7 +71,7 @@ def v1_to_v2(json_obj: Dict):
             for datapoint in datapoints:
                 val = None
                 if datapoint[1] is not None:
-                    val = 0 if datapoint[1] < 100 else 1
+                    val = 1 if datapoint[1] > 0 else 0
                 serie["values"].append({"timestamp": datapoint[0], "value": val})
             response_template["metrics"][timeseries_id]["series"].append(serie)
     return response_template
