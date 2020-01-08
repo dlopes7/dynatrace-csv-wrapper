@@ -63,13 +63,15 @@ def v1_to_v2(json_obj: Dict):
     response_template = OrderedDict({"totalCount": 0, "nextPageKey": None, "metrics": {}})
 
     if "dataResult" in json_obj:
-        timeseries_id = json_obj["timeseriesId"]
+        timeseries_id = "builtin:synthetic.browser.event.failure"
         response_template["metrics"][timeseries_id] = {"series": []}
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
             serie = {"dimensions": [dimension.split(",")[-1].strip()], "values": []}
             response_template["totalCount"] = len(datapoints)
             for datapoint in datapoints:
-                val = datapoint[1] / 100 if datapoint[1] is not None else None
+                val = None
+                if datapoint[1] is not None:
+                    val = 0 if datapoint[1] < 100 else 1
                 serie["values"].append({"timestamp": datapoint[0], "value": val})
             response_template["metrics"][timeseries_id]["series"].append(serie)
     return response_template
