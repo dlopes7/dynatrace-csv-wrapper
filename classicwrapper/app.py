@@ -41,20 +41,27 @@ def json_to_csv(json_obj: Dict):
     if "metrics" in json_obj:
         for selector, details in json_obj["metrics"].items():
             for serie in details["series"]:
+                dimension_name = f"SYNTHETIC_TEST_STEP-{serie['dimensions'][0][-16:]}"
                 for value in serie["values"]:
                     ts = value["timestamp"]
                     val = value["value"]
                     if val is not None:
-                        data.append([selector, serie["dimensions"][0][-16:], ts, val])
+                        val = 1.0 if val > 0.0 else 0.0
+                        data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts, val])
+                    else:
+                        data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts])
     elif "dataResult" in json_obj:
         timeseries_id = json_obj["timeseriesId"]
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
+            dimension_name = f"SYNTHETIC_TEST_STEP-{dimension.split(',')[0][-16:]}"
             for datapoint in datapoints:
                 ts = datapoint[0]
                 val = datapoint[1]
                 if val is not None:
-                    val = 0 if val == 100 else 1
-                    data.append([timeseries_id, dimension.split(",")[0][-16:], ts, val])
+                    val = 1.0 if val > 0.0 else 0.0
+                    data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts, val])
+                else:
+                    data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts])
 
     return data
 
@@ -133,9 +140,9 @@ def metrics_series(selector):
     data_response["nextPageKey"] = data["nextPageKey"]
     data_response["metrics"] = data["metrics"]
 
-    # lines = json_to_csv(data)
-    # return csv_download(lines)
-    return json.dumps(data_response, indent=2)
+    lines = json_to_csv(data)
+    return csv_download(lines)
+    # return json.dumps(data_response, indent=2)
 
 
 @app.route("/api/v1/timeseries/<identifier>")
@@ -177,14 +184,14 @@ def timeseries(identifier):
     if "error" in data:
         return make_response(data, data["error"]["code"])
 
-    # lines = json_to_csv(data)
-    # return csv_download(lines)
-    return json.dumps(v1_to_v2(data), indent=2)
+    lines = json_to_csv(data)
+    return csv_download(lines)
+    # return json.dumps(v1_to_v2(data), indent=2)
 
 
 def main():
     log_setup()
-    app.run(host="0.0.0.0", port=80, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
 
 
 if __name__ == "__main__":
