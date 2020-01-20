@@ -38,21 +38,32 @@ def log_setup():
 
 def json_to_csv(json_obj: Dict):
     data = []
-    if "metrics" in json_obj:
-        for selector, details in json_obj["metrics"].items():
-            for serie in details["series"]:
+    if "result" in json_obj and isinstance(json_obj["result"], list):
+        for result in json_obj["result"]:
+            for serie in result["data"]:
                 dimension_name = f"SYNTHETIC_TEST_STEP-{serie['dimensions'][0][-16:]}"
-                for value in serie["values"]:
-                    ts = value["timestamp"]
-                    val = value["value"]
-                    if val is not None:
-                        val = 1.0 if val > 0.0 else 0.0
-                        data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts, val])
+                for timestamp, value in zip(serie['timestamps'], serie["values"]):
+                    if value is not None:
+                        value = 1.0 if value > 0.0 else 0.0
+                        data.append(["builtin:synthetic.browser.event.failure", dimension_name, timestamp, value])
                     else:
-                        data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts])
+                        data.append(["builtin:synthetic.browser.event.failure", dimension_name, timestamp])
     elif "dataResult" in json_obj:
         timeseries_id = json_obj["timeseriesId"]
         for dimension, datapoints in json_obj["dataResult"]["dataPoints"].items():
+            dimension_name = f"SYNTHETIC_TEST_STEP-{dimension.split(',')[0][-16:]}"
+            for datapoint in datapoints:
+                ts = datapoint[0]
+                val = datapoint[1]
+                if val is not None:
+                    val = 1.0 if val > 0.0 else 0.0
+                    data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts, val])
+                else:
+                    data.append(["builtin:synthetic.browser.event.failure", dimension_name, ts])
+    elif "result" in json_obj and isinstance(json_obj["result"], dict):
+        result = json_obj["result"]
+        timeseries_id = result["timeseriesId"]
+        for dimension, datapoints in result["dataPoints"].items():
             dimension_name = f"SYNTHETIC_TEST_STEP-{dimension.split(',')[0][-16:]}"
             for datapoint in datapoints:
                 ts = datapoint[0]
@@ -117,6 +128,7 @@ def metrics_series(selector):
     page_size = request.args.get("pageSize", 100000)
     resolution = request.args.get("resolution", None)
     scope = request.args.get("scope", None)
+    entitySelector = request.args.get("entitySelector", None)
 
     custom_time = request.args.get("customTime", None)
     if custom_time is not None:
@@ -130,15 +142,18 @@ def metrics_series(selector):
         page_size=page_size,
         resolution=resolution,
         scope=scope,
+        entitySelector=entitySelector
     )
 
     if "error" in data:
         return make_response(data, data["error"]["code"])
 
+    # app.logger.debug(f"{data}")
+
     data_response = OrderedDict({"totalCount": 0, "nextPageKey": None, "metrics": {}})
     data_response["totalCount"] = data["totalCount"]
     data_response["nextPageKey"] = data["nextPageKey"]
-    data_response["metrics"] = data["metrics"]
+    data_response["metrics"] = data["result"]
 
     lines = json_to_csv(data)
     return csv_download(lines)
@@ -147,7 +162,7 @@ def metrics_series(selector):
 
 @app.route("/api/v1/timeseries/<identifier>")
 def timeseries(identifier):
-    with open(f"{current_file_path}/config.json", "r") as f:
+    with open(f"{current_file_path}/config.json", "r") as f: 
         config = json.load(f)
     d = DynatraceAPI(config["dynatrace_base_url"], config["dynatrace_token"], logger=app.logger)
 
@@ -156,7 +171,7 @@ def timeseries(identifier):
     predict = request.args.get("predict", False)
     aggregation = request.args.get("aggregation", None)
     query_mode = request.args.get("queryMode", "SERIES")
-    entity = request.args.get("entity", None)
+    entities = request.args.getlist("entity", None)
     tag = request.args.get("tag", None)
     percentile = request.args.get("percentile", None)
     include_parents_ids = request.args.get("includeParentIds", False)
@@ -174,7 +189,7 @@ def timeseries(identifier):
         end_timestamp=date_to,
         predict=predict,
         query_mode=query_mode,
-        entity=entity,
+        entities=entities,
         tag=tag,
         percentile=percentile,
         include_parents_ids=include_parents_ids,

@@ -15,7 +15,10 @@ class DynatraceAPI:
     def _make_request(self, path, params=None, method="GET"):
         url = f"{self.base_url}{path}"
         self.logger.debug(f"Calling {url} with params: {params}")
-        r = requests.request(method, url, params=params, headers=self._auth)
+        if method == "GET":
+            r = requests.request(method, url, params=params, headers=self._auth)
+        else:
+             r = requests.request(method, url, json=params, headers=self._auth)
         self.logger.debug(f"Got response: {r} from {url}")
         if r.status_code >= 300:
             self.logger.error(f"Error making request: {r.text}")
@@ -26,17 +29,20 @@ class DynatraceAPI:
         return self._make_request(path)
 
     def metrics_series(
-        self, selector, resolution=None, date_from=None, date_to=None, next_page_key=None, page_size=None, scope=None,
+        self, selector, resolution=None, date_from=None, date_to=None, next_page_key=None, page_size=None, scope=None, entitySelector=None
     ):
-        path = f"/api/v2/metrics/series/{selector}"
+        path = f"/api/v2/metrics/query"
         params = {
+            "metricSelector": selector,
             "resolution": resolution,
             "from": date_from,
             "to": date_to,
             "nextPageKey": next_page_key,
             "pageSize": page_size,
             "scope": scope,
+            "entitySelector": entitySelector
         }
+        self.logger.debug(f"Calling {path} with params {params}")
         return self._make_request(path, params=params)
 
     def synthetic_monitors(self):
@@ -57,7 +63,7 @@ class DynatraceAPI:
         predict=False,
         relative_time=None,
         query_mode="SERIES",
-        entity=None,
+        entities=None,
         tag=None,
         percentile=None,
         include_parents_ids=False,
@@ -72,13 +78,13 @@ class DynatraceAPI:
             "predict": predict,
             "relativeTime": relative_time,
             "queryMode": query_mode,
-            "entity": entity,
+            "entities": entities,
             "tag": tag,
             "percentile": percentile,
             "includeParentIds": include_parents_ids,
             "considerMaintenanceWindowsForAvailability": consider_maintenance,
         }
-        return self._make_request(path, params)
+        return self._make_request(path, params, method="POST")
 
 
 def main():
